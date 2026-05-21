@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteo SRF Villmergen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #0a3a5f;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .current-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .info-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        section {
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 8-Day Forecast */
+        .forecast-8day {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 12px;
+        }
+        
+        .forecast-day-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .day-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .day-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .day-temps {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .day-temps strong {
+            color: #ffa500;
+        }
+        
+        .day-temps span {
+            opacity: 0.7;
+        }
+        
+        .day-precip {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        /* Hourly Forecast */
+        .hourly-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .hourly-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #aaa;
+        }
+        
+        .hourly-scroll {
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .hourly-items {
+            display: flex;
+            gap: 8px;
+            min-width: min-content;
+        }
+        
+        .hourly-item {
+            flex: 0 0 60px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .hour-time {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .hour-icon {
+            font-size: 32px;
+            margin: 8px 0;
+        }
+        
+        .hour-temp {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .hour-precip {
+            opacity: 0.7;
+        }
+        
+        /* Wind Section */
+        .wind-bars {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        
+        .wind-bar {
+            flex: 0 0 50px;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .wind-icon {
+            font-size: 24px;
+            margin: 8px 0;
+            transform: rotate(var(--wind-angle));
+        }
+        
+        .wind-speed {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .wind-time {
+            opacity: 0.7;
+        }
+        
+        /* Chart placeholders */
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 24px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .content {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="loading">
+            Wetter wird geladen...
+        </div>
+    </div>
+
+    <script>
+        const latitude = 47.3139;
+        const longitude = 8.3108;
+        
+        async function fetchWeather() {
+            try {
+                const response = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m&hourly=temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/Zurich&forecast_days=8`
+                );
+                
+                const data = await response.json();
+                displayWeather(data);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `<div style="color: #ff6b6b;">Fehler beim Laden der Wetterdaten</div>`;
+            }
+        }
+        
+        function getWeatherIcon(code) {
+            if (code === 0 || code === 1) return '☀️';
+            if (code === 2) return '⛅';
+            if (code === 3) return '☁️';
+            if (code === 45 || code === 48) return '🌫️';
+            if (code >= 51 && code <= 67) return '🌧️';
+            if (code >= 71 && code <= 86) return '❄️';
+            if (code >= 80 && code <= 82) return '⛈️';
+            if (code >= 95) return '⛈️';
+            return '☁️';
+        }
+        
+        function getWindIcon(angle) {
+            const directions = ['↓', '↙️', '←', '↖️', '↑', '↗️', '→', '↘️'];
+            const index = Math.round(angle / 45) % 8;
+            return directions[index];
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+            return days[date.getDay()];
+        }
+        
+        function displayWeather(data) {
+            const current = data.current;
+            const hourly = data.hourly;
+            const daily = data.daily;
+            
+            let html = '<div class="content">';
+            
+            // Header
+            html += `<div class="header">
+                <h1>☁️ Wetter</h1>
+                <p>Villmergen, Aargau • 430 m.ü.M.</p>
+            </div>`;
+            
+            // Current Info
+            html += `<div class="current-info">
+                <div class="info-item">
+                    <div class="info-label">Temperatur</div>
+                    <div class="info-value">${Math.round(current.temperature_2m)}°C</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Gefühlt</div>
+                    <div class="info-value">${Math.round(current.apparent_temperature)}°C</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Luftfeuchte</div>
+                    <div class="info-value">${current.relative_humidity_2m}%</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Wind</div>
+                    <div class="info-value">${Math.round(current.wind_speed_10m)} km/h</div>
+                </div>
+            </div>`;
+            
+            // 8-Day Forecast
+            html += '<section>';
+            html += '<h2>8-Tage Vorhersage</h2>';
+            html += '<div class="forecast-8day">';
+            
+            for (let i = 0; i < Math.min(8, daily.time.length); i++) {
+                const date = new Date(daily.time[i]);
+                const dayName = formatDate(daily.time[i]);
+                const icon = getWeatherIcon(daily.weather_code[i]);
+                const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                const minTemp = Math.round(daily.temperature_2m_min[i]);
+                const precip = daily.precipitation_sum[i].toFixed(1);
+                
+                html += `<div class="forecast-day-card">
+                    <div class="day-name">${dayName}</div>
+                    <div class="day-icon">${icon}</div>
+                    <div class="day-temps"><strong>${maxTemp}°</strong> <span>${minTemp}°</span></div>
+                    <div class="day-precip">${precip} mm</div>
+                </div>`;
+            }
+            
+            html += '</div>';
+            html += '</section>';
+            
+            // Hourly Forecast for today and tomorrow
+            const today = new Date(daily.time[0]);
+            const tomorrow = new Date(daily.time[1]);
+            
+            for (let dayOffset = 0; dayOffset < 2; dayOffset++) {
+                const dayDate = dayOffset === 0 ? today : tomorrow;
+                const dayName = formatDate(dayDate.toISOString().split('T')[0]);
+                
+                html += `<section>
+                    <h2>Stundliche Vorhersage - ${dayName}</h2>
+                    <div class="hourly-section">
+                        <div class="hourly-scroll">
+                            <div class="hourly-items">`;
+                
+                // Show 24 hourly items for each day
+                const startHour = dayOffset === 0 ? new Date().getHours() : 0;
+                const endHour = startHour + 24;
+                
+                for (let h = startHour; h < endHour && h < hourly.time.length; h++) {
+                    const time = new Date(hourly.time[h]);
+                    const temp = Math.round(hourly.temperature_2m[h]);
+                    const precip = hourly.precipitation[h];
+                    const icon = getWeatherIcon(hourly.weather_code[h]);
+                    const timeStr = time.getHours().toString().padStart(2, '0') + ':00';
+                    
+                    html += `<div class="hourly-item">
+                        <div class="hour-time">${timeStr}</div>
+                        <div class="hour-icon">${icon}</div>
+                        <div class="hour-temp">${temp}°</div>
+                        <div class="hour-precip">${precip > 0 ? precip.toFixed(1) + ' mm' : '-'}</div>
+                    </div>`;
+                }
+                
+                html += `            </div>
+                        </div>
+                    </div>
+                </section>`;
+            }
+            
+            // Wind Section
+            html += `<section>
+                <h2>Wind</h2>
+                <div class="hourly-section">
+                    <div class="hourly-scroll">
+                        <div class="hourly-items" style="min-width: min-content;">`;
+            
+            const startHour = new Date().getHours();
+            for (let h = startHour; h < startHour + 24 && h < hourly.time.length; h++) {
+                const time = new Date(hourly.time[h]);
+                const speed = Math.round(hourly.wind_speed_10m[h]);
+                const direction = hourly.wind_direction_10m[h];
+                const icon = getWindIcon(direction);
+                const timeStr = time.getHours().toString().padStart(2, '0') + ':00';
+                
+                html += `<div class="wind-bar">
+                    <div class="wind-icon" style="--wind-angle: ${direction}deg">${icon}</div>
+                    <div class="wind-speed">${speed}</div>
+                    <div class="wind-time">${timeStr}</div>
+                </div>`;
+            }
+            
+            html += `        </div>
+                    </div>
+                </div>
+            </section>`;
+            
+            html += '</div>';
+            
+            document.getElementById('content').innerHTML = html;
+        }
+        
+        fetchWeather();
+    </script>
+</body>
+</html>
