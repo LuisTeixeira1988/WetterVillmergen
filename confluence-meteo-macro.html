@@ -1,0 +1,240 @@
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif; background: #0a3a5f; color: #fff; padding: 20px; border-radius: 8px;">
+    <style>
+        .meteo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .meteo-header {
+            margin-bottom: 32px;
+        }
+        
+        .meteo-header h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .meteo-header p {
+            font-size: 13px;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        .meteo-current-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        
+        .meteo-info-item {
+            text-align: center;
+        }
+        
+        .meteo-info-label {
+            font-size: 11px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .meteo-info-value {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .meteo-section {
+            margin-bottom: 32px;
+        }
+        
+        .meteo-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .meteo-forecast-8day {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+        }
+        
+        .meteo-forecast-day-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .meteo-day-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .meteo-day-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .meteo-day-temps {
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        
+        .meteo-day-temps strong {
+            color: #ffa500;
+        }
+        
+        .meteo-day-temps span {
+            opacity: 0.7;
+        }
+        
+        .meteo-day-precip {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+        
+        .meteo-hourly-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .meteo-hourly-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #aaa;
+        }
+        
+        .meteo-hourly-scroll {
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .meteo-hourly-items {
+            display: flex;
+            gap: 6px;
+            min-width: min-content;
+        }
+        
+        .meteo-hourly-item {
+            flex: 0 0 50px;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .meteo-hour-time {
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .meteo-hour-icon {
+            font-size: 28px;
+            margin: 6px 0;
+        }
+        
+        .meteo-hour-temp {
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .meteo-hour-precip {
+            opacity: 0.7;
+            font-size: 10px;
+        }
+    </style>
+    
+    <div class="meteo-container">
+        <div id="meteoContent" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.7);">
+            Wetter wird geladen...
+        </div>
+    </div>
+
+    <script>
+        (async function() {
+            const latitude = 47.3139;
+            const longitude = 8.3108;
+            
+            try {
+                const response = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&hourly=temperature_2m,weather_code,precipitation,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/Zurich&forecast_days=8`
+                );
+                
+                const data = await response.json();
+                
+                function getWeatherIcon(code) {
+                    if (code === 0 || code === 1) return '☀️';
+                    if (code === 2) return '⛅';
+                    if (code === 3) return '☁️';
+                    if (code === 45 || code === 48) return '🌫️';
+                    if (code >= 51 && code <= 67) return '🌧️';
+                    if (code >= 71 && code <= 86) return '❄️';
+                    if (code >= 80 && code <= 82) return '⛈️';
+                    return '☁️';
+                }
+                
+                function formatDate(dateStr) {
+                    const date = new Date(dateStr);
+                    const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+                    return days[date.getDay()];
+                }
+                
+                const current = data.current;
+                const hourly = data.hourly;
+                const daily = data.daily;
+                
+                let html = '<div class="meteo-header"><h2>☁️ Wetter</h2><p>Villmergen, Aargau • 430 m.ü.M.</p></div>';
+                
+                html += '<div class="meteo-current-info">';
+                html += `<div class="meteo-info-item"><div class="meteo-info-label">Temperatur</div><div class="meteo-info-value">${Math.round(current.temperature_2m)}°C</div></div>`;
+                html += `<div class="meteo-info-item"><div class="meteo-info-label">Gefühlt</div><div class="meteo-info-value">${Math.round(current.apparent_temperature)}°C</div></div>`;
+                html += `<div class="meteo-info-item"><div class="meteo-info-label">Luftfeuchte</div><div class="meteo-info-value">${current.relative_humidity_2m}%</div></div>`;
+                html += `<div class="meteo-info-item"><div class="meteo-info-label">Wind</div><div class="meteo-info-value">${Math.round(current.wind_speed_10m)} km/h</div></div>`;
+                html += '</div>';
+                
+                html += '<div class="meteo-section"><h3>8-Tage Vorhersage</h3><div class="meteo-forecast-8day">';
+                for (let i = 0; i < Math.min(8, daily.time.length); i++) {
+                    const dayName = formatDate(daily.time[i]);
+                    const icon = getWeatherIcon(daily.weather_code[i]);
+                    const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                    const minTemp = Math.round(daily.temperature_2m_min[i]);
+                    const precip = daily.precipitation_sum[i].toFixed(1);
+                    html += `<div class="meteo-forecast-day-card"><div class="meteo-day-name">${dayName}</div><div class="meteo-day-icon">${icon}</div><div class="meteo-day-temps"><strong>${maxTemp}°</strong> <span>${minTemp}°</span></div><div class="meteo-day-precip">${precip} mm</div></div>`;
+                }
+                html += '</div></div>';
+                
+                html += '<div class="meteo-section"><h3>Stündliche Vorhersage</h3>';
+                html += '<div class="meteo-hourly-section"><div class="meteo-hourly-title">Heute</div><div class="meteo-hourly-scroll"><div class="meteo-hourly-items">';
+                const startHour = new Date().getHours();
+                for (let h = startHour; h < Math.min(startHour + 24, hourly.time.length); h++) {
+                    const time = new Date(hourly.time[h]);
+                    const temp = Math.round(hourly.temperature_2m[h]);
+                    const precip = hourly.precipitation[h];
+                    const icon = getWeatherIcon(hourly.weather_code[h]);
+                    const timeStr = time.getHours().toString().padStart(2, '0') + ':00';
+                    html += `<div class="meteo-hourly-item"><div class="meteo-hour-time">${timeStr}</div><div class="meteo-hour-icon">${icon}</div><div class="meteo-hour-temp">${temp}°</div><div class="meteo-hour-precip">${precip > 0 ? precip.toFixed(1) + ' mm' : '-'}</div></div>`;
+                }
+                html += '</div></div></div></div>';
+                
+                document.getElementById('meteoContent').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('meteoContent').innerHTML = '<div style="color: #ff6b6b;">Fehler beim Laden der Wetterdaten</div>';
+            }
+        })();
+    </script>
+</div>
